@@ -1,0 +1,50 @@
+#Info {
+    position: fixed;
+    left: 10px;
+    bottom: 10px;
+    width: 30%;
+    height: 70px;
+    background-color: rgba(0,0,0,0.3);
+    z-index: 1000;
+    border-radius: 10px;
+}
+
+div.overInfo {
+    margin-left: 10px;
+    margin-top: 3px;
+    font-size: 15px;
+    color: white;
+    text-overflow: ellipsis;
+}
+
+div.gradient {
+    padding: 5px 5px 5px 5px;
+    border-radius: 4px;
+    background: Gainsboro;
+    text-align: center;
+    height: 20px;
+    margin-left: 10px;
+    margin-top: 6px;
+}
+
+div.gradient div {
+    display: inline-block;
+    height: 20px;
+    color: rgba(0,0,0,0);
+}
+
+
+div.infL {
+    position: absolute;
+    bottom: 0px;
+    left: 20px;
+    font-size: 10px;
+    color: white;
+}
+div.infR {
+    position: absolute;
+    bottom: 0px;
+    right: 20px;
+    font-size: 10px;
+    color: white;
+}

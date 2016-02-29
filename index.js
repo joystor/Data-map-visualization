@@ -9,13 +9,24 @@ var mexData;
 var dat2Show = 'POBTOT';
 var dmin;
 var dmax;
+var arrColors = ['lightyellow', 'orange', 'deeppink', 'darkred'];
+var scaleColor;
 
 $(document).ready(function(){
 
-
-  var layer = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
+// dark_all  light_all
+  var lyLight = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png',{
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
   });
+
+  var lyDark = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',{
+    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
+  });
+
+  var baseMaps = {
+    "Light": lyLight,
+    "Dark": lyDark
+  };
 
   lMap = L.map('lMap', {
     scrollWheelZoom: false,
@@ -23,7 +34,9 @@ $(document).ready(function(){
     zoom: 5
   });
 
-  lMap.addLayer(layer);
+  lMap.addLayer(lyLight);
+  lMap.addLayer(lyDark);
+  L.control.layers(baseMaps, null).addTo(lMap);
 
 
   lMap.on('click', function(e) {
@@ -32,21 +45,22 @@ $(document).ready(function(){
 
   addData();
 
-  addLegend();
+
 });
 
 
 function addData(){
   d3.json( 'data/mgm2015v6_2_4326.topojson', function ( e, json ) {
     var canvas = L.canvas();
-    d3.tsv( 'data/ITER_NALMUN_10.tsv', function ( e, data ) {
+    d3.tsv( 'data/ITER_NALMUN_10_utf.tsv', function ( e, data ) {
       mexData = data;
       mexLayer = topojson.feature( json, json.objects['mgm2015v6_2_4326'] );
 
       var mData = (_.pluck(mexData, dat2Show));
       dmax = _.max(mData.map(function(o){return parseInt(o) || 0;}));
       dmin = _.min(mData.map(function(o){return parseInt(o) || 0;}));
-      var scale = chroma.scale(['#F5F5F3', 'yellow', "red", "darkred"]).domain([dmin,dmax], 1 );
+      scaleColor = chroma.bezier(arrColors);
+      scaleColor = chroma.scale(scaleColor).domain([dmin,dmax], 1 ).correctLightness(true);
 
       lMap.addLayer(
         new L.GeoJSON(mexLayer, {
@@ -59,13 +73,11 @@ function addData(){
                 var p = feature.properties;
                 var d = _.where(mexData,{'ENTIDAD':p.ent,'MUN':p.mun})[0];
                 if(d){
-                  d3.select( ".legend .value" )
-                    .attr( "value", (d.NOM_ENT+" - "+d.NOM_MUN+' '+dat2Show+':'+d[dat2Show]));
+                  $('.overInfo').html(d.NOM_ENT+" - "+d.NOM_MUN+' ('+dat2Show+': '+(parseInt(d[dat2Show]).toLocaleString())+')');
                 }
               },
               mouseout: function() {
-                d3.select( ".legend .value" )
-                .attr( "value", "" );
+                $('.overInfo').html('Localidades');
               }
             });
           },
@@ -81,7 +93,7 @@ function addData(){
                 stroke: 0
               };
             }
-            var color = scale( (parseInt(d[dat2Show]) || 0) ).hex();
+            var color = scaleColor( (parseInt(d[dat2Show]) || 0) ).hex();
             return {
               fillOpacity: 0.65,
               fillColor: color,
@@ -90,6 +102,8 @@ function addData(){
           }
         })
       );
+
+      addLegend();
     });
   });
 }
@@ -97,64 +111,18 @@ function addData(){
 
 
 function addLegend(){
-  // Delete existing legend to update it
-  d3.select( ".legend" ).remove();
-
-  var   // Legend size
-        width = 280,
-        padding = 10,
-
-        // Create legend control
-        div = d3.select( ".leaflet-bottom.leaflet-left" ).append( "div" )
-                  .attr( "class", "legend leaflet-control" ),
-
-        // Display title and unit
-        title = div.append( "div" )
-                     .attr( "class", "title" )
-                     .text( "ITER Nacional 2015 INEGI " )
-                     .append( "span" )
-                     .text( " (" + dat2Show + ")" ),
-
-        // Input where to display communes on hover
-        input = div.append( "input" )
-                     .attr( "class", "value" )
-                     .attr( "disabled", "" )
-                     .attr( "placeholder", "Localidad..." );
-
-        // Prepare linear scale and axis for gradient legend
-        // x = d3.scale.linear()
-        //             .domain( [$.domain[0], $.domain[$.domain.length-1]] )
-        //              .range( [1, width - 2 * padding - 1] ),
-
-        // canvas = div.append( "canvas" )
-        //               .attr( "height", padding )
-        //               .attr( "width", width - padding )
-        //               .node().getContext( "2d" );
-  //
-  //       gradient = canvas.createLinearGradient( 0, 0, width - 2 * padding, padding ),
-  //
-  //       stops = $.range.map( function( d, i ) { return { x: x( $.domain[i] ), color:d } } );
-  //
-  // // Define color stops on the legend
-  // for ( var s in stops ) {
-  //   gradient.addColorStop( stops[s].x/(width - 2 * padding - 1), stops[s].color );
-  // }
-  //
-  // // Draw the gradient rectangle
-  // canvas.fillStyle = gradient;
-  // canvas.fillRect( padding, 0, width - 2 * padding, padding );
-  //
-  // // Draw horizontal axis
-  // div.append( "svg" )
-  //      .attr( "width", width )
-  //      .attr( "height", 14 )
-  //    .append( "g" )
-  //      .attr( "class", "key" )
-  //      .attr( "transform", "translate( 10, 0 )" )
-  //      .call( d3.svg.axis()
-  //             .tickFormat( d3.format( $.plus + '.0f' ) )
-  //             .tickValues( $.domain )
-  //               .tickSize( 3 )
-  //                  .scale( x )
-  //         );
+  var range = $('<div />').css('width', '92%').addClass('overInfo-range').appendTo('#Info');
+  var lab = $('<div />').html('Municipio...').css('width', '92%').addClass('overInfo').appendTo('#Info');
+  var div = $('<div />').css('width', '92%').addClass('gradient').appendTo('#Info');
+  var cols = [];
+  var scl = parseInt((dmax-dmin)/100);
+  for(var i=scl; i<=dmax;i+=scl){
+    var color = scaleColor(i).hex();
+    var d = $('<div />');
+    d.css('width','1%');
+    d.css('background',color);
+    d.appendTo(div);
+  }
+  var dL = $('<div />').addClass('infL').html(parseInt(dmin).toLocaleString()).appendTo(range);
+  var dR = $('<div />').addClass('infR').html(parseInt(dmax).toLocaleString()).appendTo(range);
 }

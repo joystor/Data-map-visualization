@@ -5,6 +5,7 @@ var lMap;
 
 var mexLayer;
 var mexData;
+var mexVariables;
 
 var dat2Show = 'POBTOT';
 var dmin;
@@ -23,9 +24,16 @@ $(document).ready(function(){
     attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, &copy; <a href="http://cartodb.com/attributions">CartoDB</a>'
   });
 
+  var lyToner = new L.StamenTileLayer("toner");
+  var lyTerrain = new L.StamenTileLayer("terrain");
+  var lyWater = new L.StamenTileLayer("watercolor");
+
   var baseMaps = {
     "Light": lyLight,
-    "Dark": lyDark
+    "Dark": lyDark,
+    "Stamen Toner":lyToner,
+    "Stamen Terrain":lyTerrain,
+    "Stamen watercolor":lyWater
   };
 
   lMap = L.map('lMap', {
@@ -36,6 +44,9 @@ $(document).ready(function(){
 
   lMap.addLayer(lyLight);
   lMap.addLayer(lyDark);
+  lMap.addLayer(lyToner);
+  lMap.addLayer(lyTerrain);
+  lMap.addLayer(lyWater);
   L.control.layers(baseMaps, null).addTo(lMap);
 
 
@@ -54,6 +65,7 @@ function addData(){
     var canvas = L.canvas();
     d3.tsv( 'data/ITER_NALMUN_10_utf.tsv', function ( e, data ) {
       mexData = data;
+      mexVariables = _.pairs(mexData[0]).map(function(pair){return pair[0];});
       mexLayer = topojson.feature( json, json.objects['mgm2015v6_2_4326'] );
 
       var mData = (_.pluck(mexData, dat2Show));

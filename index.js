@@ -13,12 +13,13 @@ var dmin;
 var dmax;
 var arrColors = ['lightyellow', 'orange', 'deeppink', 'darkred'];
 var scaleColor;
+var SCALE = 100;
 
 $(document).ready(function(){
 
   $('#inpCols').val(arrColors.toString());
   $('#inpCols').on('change',function(){
-    arrColors = $(this).val().split(',');
+    arrColors = $('#inpCols').val().split(',').map(function(o){ return o.trim();});
     colorLayer();
   });
 
@@ -49,10 +50,10 @@ $(document).ready(function(){
     zoom: 5
   });
 
-  lMap.addLayer(lyLight);
+  /*lMap.addLayer(lyLight);
   lMap.addLayer(lyDark);
   lMap.addLayer(lyToner);
-  lMap.addLayer(lyTerrain);
+  lMap.addLayer(lyTerrain);*/
   lMap.addLayer(lyWater);
   L.control.layers(baseMaps, null).addTo(lMap);
 
@@ -72,8 +73,9 @@ function addLegend(){
   var lab = $('<div />').html('Municipio...').css('width', '92%').addClass('overInfo').appendTo('#Info');
   var div = $('<div />').css('width', '92%').addClass('gradient').appendTo('#Info');
   var cols = [];
-  var scl = parseInt((dmax-dmin)/100);
-  for(var i=scl; i<=dmax;i+=scl){
+  var scl = 0; //parseInt((dmax-dmin)/100);
+  //for(var i=scl; i<=dmax;i++){//i+=scl){
+  for(var i=1; i<=SCALE;i++){//i+=scl){
     var color = scaleColor(i).hex();
     var d = $('<div />');
     d.css('width','1%');
@@ -89,7 +91,8 @@ function colorLayer(){
   dmax = _.max(mData.map(function(o){return parseInt(o) || 0;}));
   dmin = _.min(mData.map(function(o){return parseInt(o) || 0;}));
   scaleColor = chroma.bezier(arrColors);
-  scaleColor = chroma.scale(scaleColor).domain([dmin,dmax], 1 ).correctLightness(true);
+  //scaleColor = chroma.scale(scaleColor).domain([dmin,dmax], 1 ).correctLightness(true);
+  scaleColor = chroma.scale(scaleColor).domain([1,SCALE], 1 ).correctLightness(true);
 
   mexLayer.clearLayers();
   mexLayer.addData(mexGeoJSON);
@@ -100,25 +103,14 @@ function colorLayer(){
 function addDataCensus(){
   d3.tsv( 'data/ITER_NALMUN_10_utf.tsv', function ( e, data ) {
     mexData = data;
-    mexVariables = _.pairs(mexData[0]).map(function(pair){return pair[0];});
-
+    mexVariables = _.without(_.pairs(mexData[0]).map(function(pair){return pair[0];}),'ENTIDAD','NOM_ENT','MUN','NOM_MUN','LOC');
     _.each(mexVariables,function(o){
-      if(['ENTIDAD','NOM_ENT','MUN','NOM_MUN','LOC'].indexOf(o) !== -1){
-        return;
-      }
       $('#selVars').append('<option value="'+o+'">'+o+'</option>');
     });
-
     $('#selVars').on('change',function(){
       dat2Show = $(this).val();
       colorLayer();
     });
-
-    var mData = (_.pluck(mexData, dat2Show));
-    dmax = _.max(mData.map(function(o){return parseInt(o) || 0;}));
-    dmin = _.min(mData.map(function(o){return parseInt(o) || 0;}));
-    scaleColor = chroma.bezier(arrColors);
-    scaleColor = chroma.scale(scaleColor).domain([dmin,dmax], 1 ).correctLightness(true);
 
     colorLayer();
   });
@@ -168,7 +160,7 @@ function addData(){
               stroke: 0
             };
           }
-          var color = scaleColor( (parseInt(d[dat2Show]) || 0) ).hex();
+          var color = scaleColor( (   ((parseInt(d[dat2Show])*SCALE)/dmax) || 0) ).hex();
           return {
             fillOpacity: 0.65,
             fillColor: color,

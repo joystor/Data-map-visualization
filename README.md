@@ -11,6 +11,8 @@ iconv -c -f LATIN1 -t UTF8 ITER_NALMUN_10.tsv  > ITER_NALMUN_10_utf.tsv
 - https://github.com/sylvaindurand/france-choropleth/
 
 
+## Live example:
+http://dev.joystor.xyz/topo/
 
 ### Rapid http server
  python -m SimpleHTTPServer 8000
